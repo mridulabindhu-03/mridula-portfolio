@@ -1,0 +1,33 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/<your-username>/<your-repo>.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t htmlproject:latest .'
+            }
+        }
+
+        stage('Run Tomcat Container') {
+            steps {
+                // Stop old container if running
+                sh 'docker rm -f htmlproject-container || true'
+
+                // Run on port 8081 (host) → 8080 (container)
+                sh 'docker run -d --name htmlproject-container -p 8081:8080 htmlproject:latest'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment successful! Visit http://localhost:8081"
+        }
+    }
+}
