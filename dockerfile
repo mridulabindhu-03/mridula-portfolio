@@ -1,5 +1,5 @@
 # Stage 1: Build with Maven
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+FROM maven:3.9.11-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
@@ -13,3 +13,4 @@ COPY --from=build /app/target/htmlproject.war /usr/local/tomcat/webapps/ROOT.war
 # Expose port 8080 inside container (Tomcat default)
 EXPOSE 8080
 CMD ["catalina.sh", "run"]
+
