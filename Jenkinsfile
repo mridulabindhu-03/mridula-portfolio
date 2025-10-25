@@ -33,11 +33,13 @@ pipeline {
       }
     }
 
-    stage('Stop & Remove Old Container') {
+        stage('Stop & Remove Old Container') {
       steps {
         bat '''
-          echo ==== Removing old container if exists ====
-          powershell -Command "try { & docker rm -f %CONTAINER_NAME% 2>$null } catch { }"
+          echo ==== Check for existing container and remove if present ====
+          powershell -Command ^
+            "$c = (docker ps -a --filter 'name=%CONTAINER_NAME%' --format '{{.Names}}'); ^
+             if ($c -ne '') { Write-Output 'Found container: ' + $c ; docker rm -f %CONTAINER_NAME% ; Write-Output 'Removed container.' } else { Write-Output 'No container to remove.' }"
         '''
       }
     }
@@ -45,13 +47,35 @@ pipeline {
     stage('Run Tomcat Container') {
       steps {
         bat '''
-          echo ==== Running new container ====
+          echo ==== Verify Docker image exists ====
+          docker image inspect %IMAGE_NAME% >nul 2>&1
+          if %ERRORLEVEL% NEQ 0 (
+            echo ERROR: Docker image %IMAGE_NAME% not found. Did the build produce the image?
+            echo Listing available images:
+            docker images
+            exit /b 1
+          )
+
+          echo ==== Starting new container ====
           docker run -d --name %CONTAINER_NAME% -p 8081:8080 %IMAGE_NAME%
+          if %ERRORLEVEL% NEQ 0 (
+            echo ERROR: docker run failed.
+            echo ==== Images ====
+            docker images
+            echo ==== Containers (all) ====
+            docker ps -a
+            exit /b 1
+          )
+
+          echo ==== Container started (showing matching containers) ====
           docker ps --filter "name=%CONTAINER_NAME%"
+
+          echo ==== Container logs (last 200 lines) ====
+          docker logs --tail 200 %CONTAINER_NAME% || echo "No logs available or container exited immediately."
         '''
       }
     }
-  }
+
 
   post {
     success {
