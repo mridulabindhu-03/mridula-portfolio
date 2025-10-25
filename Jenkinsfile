@@ -43,38 +43,18 @@ pipeline {
 }
 
 
-    stage('Run Tomcat Container') {
+   stage('Run Tomcat Container') {
       steps {
         bat '''
-          echo ==== Verify Docker image exists ====
-          docker image inspect %IMAGE_NAME% >nul 2>&1
-          if %ERRORLEVEL% NEQ 0 (
-            echo ERROR: Docker image %IMAGE_NAME% not found. Did the build produce the image?
-            echo Listing available images:
-            docker images
-            exit /b 1
-          )
-
-          echo ==== Starting new container ====
+          echo ==== Starting Tomcat container ====
           docker run -d --name %CONTAINER_NAME% -p 8081:8080 %IMAGE_NAME%
-          if %ERRORLEVEL% NEQ 0 (
-            echo ERROR: docker run failed.
-            echo ==== Images ====
-            docker images
-            echo ==== Containers (all) ====
-            docker ps -a
-            exit /b 1
-          )
-
-          echo ==== Container started (showing matching containers) ====
+          echo ==== Active Containers ====
           docker ps --filter "name=%CONTAINER_NAME%"
-
-          echo ==== Container logs (last 200 lines) ====
-          docker logs --tail 200 %CONTAINER_NAME% || echo "No logs available or container exited immediately."
         '''
       }
     }
-  }  // <-- close stages block
+  }
+
 
   post {
     success {
