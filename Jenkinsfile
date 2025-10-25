@@ -1,33 +1,53 @@
 pipeline {
-    agent any
+  agent any
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/<your-username>/<your-repo>.git'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t htmlproject:latest .'
-            }
-        }
-
-        stage('Run Tomcat Container') {
-            steps {
-                // Stop old container if running
-                sh 'docker rm -f htmlproject-container || true'
-
-                // Run on port 8081 (host) → 8080 (container)
-                sh 'docker run -d --name htmlproject-container -p 8081:8080 htmlproject:latest'
-            }
-        }
+  stages {
+    stage('Checkout') {
+      steps {
+        // Use the same repo & credentials already wired to the job
+        checkout scm
+      }
     }
 
-    post {
-        success {
-            echo "✅ Deployment successful! Visit http://localhost:8081"
-        }
+    stage('Build Docker Image') {
+      steps {
+        bat '''
+          echo ==== Docker version ====
+          docker --version || echo Docker not found
+          echo ==== Build image ====
+          docker build -t htmlproject:latest .
+        '''
+      }
     }
+
+    stage('Stop & Remove Old Container') {
+      steps {
+        // Use PowerShell to remove the container if it exists (silently ignore errors)
+        bat '''
+          echo ==== Removing old container (if any) ====
+          powershell -Command "try { docker rm -f htmlproject-container -ErrorAction SilentlyContinue } catch { }"
+        '''
+      }
+    }
+
+    stage('Run Tomcat Container') {
+      steps {
+        bat '''
+          echo ==== Starting new container ====
+          docker run -d --name htmlproject-container -p 8081:8080 htmlproject:latest
+          echo ==== List running containers ====
+          docker ps --filter "name=htmlproject-container"
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "✅ Deployment successful! Visit http://<your-jenkins-host>:8081"
+    }
+    failure {
+      echo "❌ Pipeline failed. Check the console output for errors."
+    }
+  }
 }
