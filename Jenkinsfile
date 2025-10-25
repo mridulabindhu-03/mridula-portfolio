@@ -37,7 +37,7 @@ pipeline {
       steps {
         bat '''
           echo ==== Removing old container if exists ====
-          powershell -Command "try { docker rm -f %CONTAINER_NAME% -ErrorAction SilentlyContinue } catch { }"
+          powershell -Command "try { & docker rm -f %CONTAINER_NAME% 2>$null } catch { }"
         '''
       }
     }
