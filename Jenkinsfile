@@ -34,16 +34,14 @@ pipeline {
     }
 
     stage('Stop & Remove Old Container') {
-      steps {
-        bat '''
-          echo ==== Check for existing container and remove if present ====
-          powershell -Command ^
-            "$c = (docker ps -a --filter 'name=%CONTAINER_NAME%' --format '{{.Names}}'); ^
-             if ($c -ne '') { Write-Output ('Found container: ' + $c); docker rm -f %CONTAINER_NAME%; Write-Output 'Removed container.' } ^
-             else { Write-Output 'No container to remove.' }"
-        '''
-      }
-    }
+  steps {
+    bat '''
+      echo ==== Check for existing container and remove if present ====
+      powershell -Command "$c = (docker ps -a --filter \\"name=%CONTAINER_NAME%\\" --format \\"{{.Names}}\\"); if ($c) { Write-Output (\\"Found container: $c\\"); docker rm -f %CONTAINER_NAME%; Write-Output \\"Removed container.\\" } else { Write-Output \\"No container to remove.\\" }"
+    '''
+  }
+}
+
 
     stage('Run Tomcat Container') {
       steps {
