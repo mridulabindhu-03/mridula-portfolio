@@ -1,5 +1,5 @@
 # Stage 1: build WAR using Maven
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+FROM maven:3.9.11-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # copy only pom first for dependency caching
