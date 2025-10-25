@@ -14,22 +14,20 @@ pipeline {
       }
     }
 
-    stage('Verify Maven (optional)') {
+    stage('Verify Docker') {
       steps {
-        echo "Checking local mvn/java availability on agent"
-        bat 'where mvn || echo mvn not found'
-        bat 'where java || echo java not found'
-        // Optional: run a local package to verify (comment out if Docker build handles mvn)
-        // bat 'mvn -B -DskipTests=true clean package'
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
+        // Ensure docker is available on the agent. This will fail the build early if Docker is missing.
         bat '''
           echo ==== Docker version ====
           docker --version || (echo Docker not found & exit /b 1)
-          echo ==== Building Docker image ====
+        '''
+      }
+    }
+
+    stage('Build Docker Image (Maven runs inside Dockerfile)') {
+      steps {
+        bat '''
+          echo ==== Building Docker image (this runs mvn inside the Maven stage) ====
           docker build -t %IMAGE_NAME% .
         '''
       }
